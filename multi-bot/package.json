@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@langchain/community": "^0.3.26",
+    "@langchain/core": "^0.3.33",
+    "@langchain/langgraph": "^0.2.41"
+  }
+}
