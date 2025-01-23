@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@langchain/community": "^0.3.26",
+    "@langchain/core": "^0.3.33",
+    "@langchain/langgraph": "^0.2.41",
+    "@langchain/openai": "^0.3.17",
+    "@langchain/textsplitters": "^0.1.0",
+    "cheerio": "^1.0.0",
+    "langchain": "^0.3.12",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1"
+  }
+}
