@@ -15,11 +15,11 @@ const model = new ChatTogetherAI({  //creating instance of the model
 const StateAnnotation = Annotation.Root({
   ...MessagesAnnotation.spec, // interaction msgs
   nextRepresentative: Annotation<string>,
-  refundAuthorized: Annotation<boolean>,
+  readOrWrite: Annotation<boolean>,
 });
 
 
-const initialSupport = async (state: typeof StateAnnotation.State) => {
+const literary_coach = async (state: typeof StateAnnotation.State) => {
   const SYSTEM_TEMPLATE =
     `You are a literary expert, an elooquent writer in english.
         Be concise in your responses.
@@ -33,15 +33,16 @@ const initialSupport = async (state: typeof StateAnnotation.State) => {
   ]);
 
   const CATEGORIZATION_SYSTEM_TEMPLATE = `You are an expert english grammar correcter.
-Your job is to detect whether a user wants to include any philosophy in his writing or want to write in victorian style.`;
+Your job is to detect whether the content is similar to the works of Franz Kafka, Fyodor Dostovesky, Albert Camus or Jane Austen`;
   const CATEGORIZATION_HUMAN_TEMPLATE =
-    `The previous conversation is an interaction between a literary expert and a user.
-    Extract whether the literary expert is routing the user to a philosopher or a victorian writer, or whether it is just correcting the grammar.
-    Respond with a JSON object containing a single key called "nextRepresentative" with one of the following values:
+    `The following is a piece of content submitted by a user. Your task is to analyze it and determine which author it is most similar to, based on themes, style, and tone. Respond with a JSON object containing a single key called "authorCategory" with one of the following values:
 
-    If they want to route the user to the philosopher, respond only with the word "PHILOSOPHER".
-    If they want to route the user to the victorian writer, respond only with the word "VICTORIA".
-    Otherwise, respond only with the word "RESPOND".`;
+- "KAFKA" if the content explores themes of absurdity, alienation, surreal situations, or oppressive systems.
+- "DOSTOEVSKY" if the content delves into psychological depth, moral dilemmas, existential conflict, or the struggles of the human soul.
+- "CAMUS" if the content reflects on existential questions, the absurdity of life, or the pursuit of meaning in a meaningless world.
+- "AUSTEN" if the content highlights social interactions, wit, romantic entanglements, or subtle critiques of societal norms.
+
+If the content does not align closely with any of these authors, respond only with the word "UNKNOWN".`;
   const categorizationResponse = await model.invoke([{
     role: "system",
     content: CATEGORIZATION_SYSTEM_TEMPLATE,
@@ -56,7 +57,7 @@ Your job is to detect whether a user wants to include any philosophy in his writ
       type: "json_object",
       schema: zodToJsonSchema(
         z.object({
-          nextRepresentative: z.enum(["PHILOSOPHER", "VICTORIA", "RESPOND"]),
+          nextRepresentative: z.enum(["KAFKA", "DOSTOEVSKY", "CAMUS", "AUSTEN", "UNKNOWN"]),
         })
       )
     }
@@ -70,14 +71,13 @@ Your job is to detect whether a user wants to include any philosophy in his writ
   
 };
 
-const billingSupport = async (state: typeof StateAnnotation.State) => {
+const kafka = async (state: typeof StateAnnotation.State) => {
     const SYSTEM_TEMPLATE =
-      `You are a profound philospher who likes to entertain novel and absurd ideas. 
-        Help the user to the best of your ability, but be concise in your responses.
-        You have the ability to introduce new tangents to the writing, if you feel that the user needs emotional support,
-        direct him to a waifu. The waifu will provide emotional support to the user.
-        
-        Help the user to the best of your ability, but be concise in your responses.`;
+      `You are Franz Kafka. You represent absurdism, existential dread, and bureaucratic oppression. Your style is perfect for 
+      users exploring themes of alienation, complex systems, or surreal realities.
+
+        Help the user to the best of your ability in writing.
+        You have the ability to introduce new tangents to the writing.`;
   
     let trimmedHistory = state.messages;
     // Make the user's question the most recent message in the history.
@@ -86,7 +86,7 @@ const billingSupport = async (state: typeof StateAnnotation.State) => {
       trimmedHistory = trimmedHistory.slice(0, -1);
     }
   
-    const billingRepResponse = await model.invoke([
+    const readOrWrite = await model.invoke([
       {
         role: "system",
         content: SYSTEM_TEMPLATE,
@@ -94,19 +94,22 @@ const billingSupport = async (state: typeof StateAnnotation.State) => {
       ...trimmedHistory,
     ]);
     const CATEGORIZATION_SYSTEM_TEMPLATE =
-      `Your job is to detect whether the user requires emotional support or not .`;
+      `Your job is to detect whether the user wants to have a conversation on a philosophical thread or just want some content to be written in Kafkaseque style.  .`;
     const CATEGORIZATION_HUMAN_TEMPLATE =
-      `The following text is a response from a philosophy expert .
-  Extract whether they want to diret the user to a waifu or not.
-  Respond with a JSON object containing a single key called "nextRepresentative" with one of the following values:
-  
-  If they want to give him a waifu, respond only with the word "WAIFU".
-  Otherwise, respond only with the word "RESPOND".
+      `Your task is to determine the user's intent based on their request. Specifically, detect whether the user wants to:  
+      1. Engage in a philosophical conversation.  
+      2. Request content to be written in a Kafkaesque style.  
+
+      Respond with a JSON object containing a single key called "userIntent" with one of the following values:  
+
+      - "PHILOSOPHICAL" if the user is asking for a discussion on philosophical topics, concepts, or ideas.  
+      - "KAFKAESQUE" if the user wants content to be written in Kafkaesque style, characterized by surrealism, absurdity, oppressive systems, or themes of alienation.  
+      - "UNKNOWN" if the intent is unclear or does not match either of the above categories.".
   
   Here is the text:
   
   <text>
-  ${billingRepResponse.content}
+  ${readOrWrite.content}
   </text>.`;
     const categorizationResponse = await model.invoke([
       {
@@ -122,22 +125,22 @@ const billingSupport = async (state: typeof StateAnnotation.State) => {
         type: "json_object",
         schema: zodToJsonSchema(
           z.object({
-            nextRepresentative: z.enum(["WAIFU", "RESPOND"]),
+            nextRepresentative: z.enum(["PHILOSOPHICAL", "KAFKAESQUE"]),
           })
         )
       }
     });
     const categorizationOutput = JSON.parse(categorizationResponse.content as string);
     return {
-      messages: billingRepResponse,
+      messages: readOrWrite,
       nextRepresentative: categorizationOutput.nextRepresentative,
     };
   };
   
-const technicalSupport = async (state: typeof StateAnnotation.State) => {
+const dostovesky = async (state: typeof StateAnnotation.State) => {
     const SYSTEM_TEMPLATE =
-      `You are an expert writer of victorial style.You are exceptionally good at writing poems and prose.
-  Help the user to the best of your ability.`;
+      `You are Fyodor Dostovesky. Your works dive into moral dilemmas, human suffering, and the psychology of crime and redemption. 
+      Your guidance is ideal for users exploring complex character motivations or ethical conflicts..`;
   
     let trimmedHistory = state.messages;
     // Make the user's question the most recent message in the history.
@@ -159,18 +162,43 @@ const technicalSupport = async (state: typeof StateAnnotation.State) => {
     };
 };
 
+const janeAusten = async (state: typeof StateAnnotation.State) => {
+  const SYSTEM_TEMPLATE =
+    `You are jane Austen. Your works focus on social relationships, manners, and romantic entanglements with a touch of wit and irony. 
+    Her role fits users writing about interpersonal dynamics or societal norms..`;
+
+  let trimmedHistory = state.messages;
+  // Make the user's question the most recent message in the history.
+  // This helps small models stay focused.
+  if (trimmedHistory.at(-1)?._getType() === "ai") {
+    trimmedHistory = trimmedHistory.slice(0, -1);
+  }
+
+  const response = await model.invoke([
+    {
+      role: "system",
+      content: SYSTEM_TEMPLATE,
+    },
+    ...trimmedHistory,
+  ]);
+
+  return {
+    messages: response,
+  };
+};
+
 
 import { NodeInterrupt } from "@langchain/langgraph";
 
 const handleRefund = async (state: typeof StateAnnotation.State) => {
-  if (!state.refundAuthorized) {
-    console.log("--- Make your own girlfirend, baka!! ---");
-    throw new NodeInterrupt("bakaaa")
+  if (!state.readOrWrite) {
+    console.log("--- write by writere ---");
+    throw new NodeInterrupt("writing ")
   }
   return {
     messages: {
       role: "assistant",
-      content: "Waifu manifestation in process ",
+      content: state.messages.at(-1)?.content,
     },
   };
 };
@@ -178,14 +206,15 @@ const handleRefund = async (state: typeof StateAnnotation.State) => {
 import { StateGraph } from "@langchain/langgraph";
 
 let builder = new StateGraph(StateAnnotation)
-  .addNode("initial_support", initialSupport)
-  .addNode("billing_support", billingSupport)
-  .addNode("technical_support", technicalSupport)
+  .addNode("literary_coach", literary_coach)
+  .addNode("kafka", kafka)
+  .addNode("dostovesky", dostovesky)
+  .addNode("jane_austen", janeAusten)
   .addNode("handle_refund", handleRefund)
-  .addEdge("__start__", "initial_support");
+  .addEdge("__start__", "literary_coach");
 
 
-  builder = builder.addConditionalEdges("initial_support", async (state: typeof StateAnnotation.State) => {
+  builder = builder.addConditionalEdges("literary_coach", async (state: typeof StateAnnotation.State) => {
     if (state.nextRepresentative.includes("BILLING")) {
       return "billing";
     } else if (state.nextRepresentative.includes("TECHNICAL")) {
@@ -194,8 +223,9 @@ let builder = new StateGraph(StateAnnotation)
       return "conversational";
     }
   }, {
-    billing: "billing_support",
-    technical: "technical_support",
+    kafka: "kafka",
+    dostovesky: "dostovesky",
+    jane_austen: "jane_austen",
     conversational: "__end__",
   });
   
@@ -204,10 +234,10 @@ let builder = new StateGraph(StateAnnotation)
 
 
 builder = builder
-  .addEdge("technical_support", "__end__")
-  .addConditionalEdges("billing_support", async (state) => {
+  .addEdge("handle_refund", "__end__")
+  .addConditionalEdges("handle_refund", async (state) => {
     if (state.nextRepresentative.includes("REFUND")) {
-      return "refund";
+      return "write_by_writer";
     } else {
       return "__end__";
     }
@@ -231,7 +261,7 @@ const graph = builder.compile({
     messages: [
       {
         role: "user",
-        content: "I need help in writing a character sketch",
+        content: "Should we ask for help?",
       }
     ]
   }, {
@@ -242,6 +272,6 @@ const graph = builder.compile({
   
   for await (const value of stream) {
     console.log("---STEP---");
-    console.log(value);
+    console.log(value.literary_coach.messages[0].content);
     console.log("---END STEP---");
   }})()
